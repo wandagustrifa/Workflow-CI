@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DAGSHUB_REPO_OWNER: ${{ secrets.DAGSHUB_REPO_OWNER }}
-      DAGSHUB_REPO_NAME: ${{ secrets.DAGSHUB_REPO_NAME }}
-      MLFLOW_TRACKING_URI: "https://dagshub.com/${{ secrets.DAGSHUB_REPO_OWNER }}/${{ secrets.DAGSHUB_REPO_NAME }}.mlflow"
+      DAGSHUB_REPO_OWNER: "wandagustrifa"
+      DAGSHUB_REPO_NAME: "diabetes-mlops-project"
+      MLFLOW_TRACKING_URI: "https://dagshub.com/wandagustrifa/diabetes-mlops-project.mlflow"
       MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
       MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
