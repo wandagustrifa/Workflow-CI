@@ -1,0 +1,80 @@
+name: Train and Deploy Model
+
+on:
+  push:
+    paths:
+      - "MLProject/**"
+  workflow_dispatch:
+
+jobs:
+  build-model:
+    runs-on: ubuntu-latest
+
+    env:
+      DAGSHUB_REPO_OWNER: "wandagustrifa"
+      DAGSHUB_REPO_NAME: "diabetes-mlops-project"
+      MLFLOW_TRACKING_URI: "https://dagshub.com/wandagustrifa/diabetes-mlops-project.mlflow"
+      MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+      MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+      DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+
+    steps:
+      - name: Run actions/checkout@v3
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.12.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12.7"
+
+      - name: Check Env
+        run: python --version
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install mlflow==2.19.0 dagshub pandas scikit-learn matplotlib seaborn
+
+      - name: Run MLflow Project
+        run: |
+          cd MLProject
+          mlflow run . -P input_data=namadataset_preprocessing/preprocessed_diabetes_data.csv --env-manager=local --experiment-name "DiabetesPredictionLogisticRegression"
+
+      - name: Get latest MLflow run_id
+        id: get_run_id
+        run: |
+          run_id=$(python -c "import mlflow; runs = mlflow.search_runs(experiment_names=['DiabetesPredictionLogisticRegression']); print(runs.iloc[0].run_id)")
+
+          echo "Detected Run ID: $run_id"
+          echo "run_id=$run_id" >> $GITHUB_ENV
+
+      - name: Download Artifacts from DagsHub
+        run: |
+          # Download semua artefak dari Run ID tersebut ke folder lokal 'my_artifacts'
+          mlflow artifacts download --run-id ${{ env.run_id }} --dst-path my_artifacts
+
+      - name: Upload Artifacts to GitHub Repository
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-results-${{ env.run_id }}
+          path: my_artifacts/
+          retention-days: 7
+
+      - name: Build Docker Model
+        run: |
+          cd MLProject
+          mlflow models build-docker \
+            --model-uri "runs:/${{ env.run_id }}/model" \
+            --name "diabetes_model_image"
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Tag Docker Image
+        run: docker tag diabetes_model_image ${{ secrets.DOCKER_USERNAME }}/diabetes_model_image:latest
+
+      - name: Push Docker Image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/diabetes_model_image:latest
+
+      - name: Complete job
+        run: echo "Selesai! Artefak tersimpan di GitHub Actions & DagsHub. Docker image di-push."

@@ -1,0 +1,9 @@
+name: Diabetes_Model_CI
+
+conda_env: conda.yaml
+
+entry_points:
+  main:
+    parameters:
+      input_data: {type: str, default: "namadataset_preprocessing/preprocessed_diabetes_data.csv"}
+    command: "python modelling.py --input_data {input_data}"
