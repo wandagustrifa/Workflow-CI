@@ -24,13 +24,6 @@ from mlflow.models.signature import infer_signature
 from mlflow.tracking import 
 import dagshub
 
-
-# =========================
-# TRACKING DAGSHUB
-# =========================
-dagshub.init(repo_owner="wandagustrifa", repo_name="diabetes-mlops-project", mlflow=True)
-mlflow.set_tracking_uri("https://dagshub.com/wandagustrifa/diabetes-mlops-project.mlflow")
-
 def tune_and_train_model(input_filepath: str):
     print(f"Memuat data dari: {input_filepath}")
     df = pd.read_csv(input_filepath)
